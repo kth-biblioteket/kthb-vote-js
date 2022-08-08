@@ -24,540 +24,182 @@
         return navigator.platform.match(/iPad/i);
     }
 
-      var currentlanguage = 'sv';
-      if(getcurrentlangfromurl() == 'sv') {
-        currentlanguage = 'en';
-      } 
-      var categories;
-      var confirmationSynonyms;
+    var currentlanguage = 'sv';
+    if(getcurrentlangfromurl() == 'sv') {
+      currentlanguage = 'en';
+    } 
+    var categories;
+    var confirmationSynonyms;
    
-      changelang()
-      //var {remote} = require('electron');
+    changelang()
+    //var {remote} = require('electron');
 
-      function getcurrentlangfromurl() {
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-        const language = urlParams.get('language')
-        return language
+    function getcurrentlangfromurl() {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const language = urlParams.get('language')
+      return language
+    }
+
+    function getcurrentlang() {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const language = urlParams.get('language')
+      //return language
+      return currentlanguage
+    }
+    
+    //////////////////////// EVENT EMITTERS ////////////////////////
+
+    function pledgeDone(data) {
+      animateTheVote();
+    }
+
+    function reminderDone(data) {
+      console.log(data);
+    }
+
+
+    function pledge(category, action) {
+      body = {
+        "eventid": event['id'],
+        "category":category.charAt(0).toUpperCase() + category.slice(1),
+        "action": action,
+        "computerLocation":"Right"
       }
+      console.log(body)
+      $.post({
+          url: api_url + '/vote/api/v1/vote',
+          headers: { 'x-api-key': secret },
+          data: body,
+          dataType: 'json'
+      })
+      .always(pledgeDone)
+      .done(function(data) {
+        //console.log( data );
+      })
+      .fail(function(err) {
+        //alert( err );
+      });
+      // 200 it worked
+      // anything else it didn't
+      // 500 server error out
+      // 400 bad request
+      // 401 forbidden
+      // 404 not found
+    }
 
-      function getcurrentlang() {
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-        const language = urlParams.get('language')
-        //return language
-        return currentlanguage
-      }
-      function changelang() {
-        if(getcurrentlang() == 'en') {
-          //window.location.href='index.html?language=sv'
-          currentlanguage = 'sv'
-          confirmationSynonyms = [
-              'Lysande!',
-              'Fantastiskt!',
-              'Underbart!',
-              'Strålande!',
-              'Utmärkt!'
-          ];
-          categories = {
-            'Clothing': {
-              name: 'Kläder',
-              icon: 'kthobjects/E.jpg',
-              actions: [
-                {
-                  id: 'Vintageclothing',
-                  name: 'Handla mer second hand',
-                  text: 'Handlar du second hand kan du spara upp till 97% av energin som går åt till att göra nya kläder. Det är dessutom roligt och du kan hitta riktigt unika plagg till låga priser.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/T.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.tidningenhalsa.se/artiklar/kategori/20120420/klimatsmarta-handlar-second-hand/'
-                },
-                {
-                  id: 'Mend',
-                  name: 'Laga kläderna när de är trasiga',
-                  text: 'Om ett plagg går sönder, lappa, laga eller stoppa. Om du redan kan sy är det bara att sätta igång. Annars kan du gå en kurs eller lämna in plagget till skräddaren.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/I.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://karlavagen31.se/bli-klimatsmart-sa-vardar-du-dina-klader'
+    function reminder(subcategory, email) {
+      console.log(subcategory);
+      // All the data you need is the email and the subcategory
+      body = JSON.stringify({
+        email: email,
+        subcategory: subcategory,
+        "lang": getcurrentlang()
+      });
+      $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: api_url + '/vote/api/v1/reminder',
+          headers: { 'x-api-key': secret },
+          contentType: 'application/json',
+          data: body
+      })
+      .always(reminderDone);
+    }
 
-                },
-                {
-                  id: 'Quality',
-                  name: 'Köp miljömärkt',
-                  text: 'Allt fler företag erbjuder kläder där man använder miljövänliga processer och material. Detta ger en mindre påverkan på naturens resurser och kan vara ett bra alternativ om man vill köpa någonting nytt.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/H.jpg" class="learnMoreImage"/><p class="learnMoreText">Den gula klänningen är gjord av blåjeans och är det första klädesplagget i världen som gjorts av kemiskt återvunnen textil.</p>',
-                  learnMoreLink: 'https://extra.orebro.se/klimatsmartvardag/klimatsmartatips/ekonomiochkonsumtion/skapaenhallbargarderob.4.6ad5e21514fe44c621c5044.html'
-                }
-              ]
-            },
-            'Food': {
-              name: 'Mat',
-              icon: 'kthobjects/J.jpg',
-              actions: [
-                {
-                  id: 'Foodwaste',
-                  name: 'Slänga mindre mat',
-                  text: 'Varje svensk slänger 28 kilo ätbar mat i soporna varje år. Genom att planera matinköpen och bara handla vad du gör av med sparar du inte bara på resurserna utan kan också spara flera tusen kronor varje år.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/M.jpg" class="learnMoreImage"/><p class="learnMoreText">Restauranglabbet, är en innovationsarena som utforskar hur restauranger kan uppnå FN: s hållbarhetsmål genom att koppla vetenskap till livsmedelsindustrin.</p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                },
-                {
-                  id: 'Locallyproduced',
-                  name: 'Äta mer ekologiskt',
-                  text: 'Ekologiska produkterodlas utan kemiska bekämpningsmedel vilket är bra för såväl naturen som för dig själv.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/N.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                },
-                {
-                  id: 'Vegetarian',
-                  name: 'Äta mer vegetariskt.',
-                  text: 'Om du låter bli att äta nötkött en gång i veckan under ett år undviker du 150 kilo växthusgasutsläpp. Grönsaker är också riktigt gott och nyttigt.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/L.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                }
-              ]
-            },
-            'Purchases': {
-              name: 'Prylar',
-              icon: 'kthobjects/E.jpg',
-              actions: [
-                {
-                  id: 'Secondhand',
-                  name: 'Köpa eller sälja second hand.',
-                  text: 'Genom att både köpa och sälja saker second hand får prylarna ett längre liv.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/T.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                },
-                {
-                  id: 'Repair',
-                  name: 'Laga prylar som är trasiga',
-                  text: 'Har du någonting hemma som gått sönder? Laga själv, eller lämna in för lagning istället för att köpa nytt.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/U.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                },
-                {
-                  id: 'Durability',
-                  name: 'Bara köpa saker som håller länge',
-                  text: 'Behöver du köpa någonting nytt? Välj då någonting av hög kvalité som håller länge och som är gjort av miljövänliga material.',
-                  localOrgLink: [],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/V.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                }
-              ]
-            },
-            'Travels': {
-              name: 'Odling',
-              icon: 'kthobjects/O.jpg',
-              actions: [
-                {
-                  id: 'Bike',
-                  name: 'Kompostera mera',
-                  text: 'Du behöver inte ha en stor trädgård för att kunna kompostera. En komposthink kan vara riktigt praktisk i en lägenhet och du får dessutom riktigt fin och näringsrik jord till dina växter.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/Q.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                },
-                {
-                  id: 'Publictransport',
-                  name: 'Satsa på närodlade fröer',
-                  text: 'Att odla egna grönsaker och örter är både gott, nyttigt och roligt. Satsa på ekologiska fröer från producenter i Sverige – och glöm inte att ta egna fröer från dina plantor till odlingen nästa år.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/R.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                },
-                {
-                  id: 'Airtravel',
-                  name: 'Vattna rätt!',
-                  text: 'Genom att vattna på morgonen eller kvällen minskar du avdunstningen och på det sätt sparar du vatten. Om du lägger kompostmaterial som hö mellan plantorna hjälper de till att hålla vattnet kvar i odlingen.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/S.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                }
-              ]
-            },
-            'Living': {
-              name: 'Utbildning',
-              icon: 'kthobjects/A1.jpg',
-              actions: [
-                {
-                  id: 'Energyaudit',
-                  name: 'Gå med i en studentförening',
-                  text: 'KTH har flera engagerade studentföreningar som brinner för miljö och klimat. Gå med i en förening och bidra till en bättre miljö.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/B.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://www.folksam.se/tester-och-goda-rad/miljo-och-ansvar/bli-klimatsmart/bo-klimatsmart'
-                },
-                {
-                  id: 'Water',
-                  name: 'Läs en ny bok',
-                  text: 'KTH har många forskare som fokuserar på hållbar utveckling och klimat. Passa på att låna böcker och artiklar på biblioteket och lär dig mer om ämnen som intresserar dig.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/C.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                },
-                {
-                  id: 'Electronics',
-                  name: 'Gå på öppna föreläsningar',
-                  text: 'KTH Biblioteket ger flera olika evenemang och föreläsningar varje termin med tema hållbarhet och klimat. Kolla in vår hemsida kth.se/biblioteket för kommande evenemang.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/D.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                }
-              ]
-            }
-          }
-        } else {
-          //window.location.href='index.html?language=en'
-          currentlanguage = 'en'
-          confirmationSynonyms = [
-            'Brilliant!',
-            'Fantastic!',
-            'Wonderful!',
-            'Spectacular!',
-            'Excellent!',
-            'Awesome!'
-        ];
-          categories = {
-            'Clothing': {
-              name: 'Clothing',
-              icon: 'kthobjects/F.jpg',
-              actions: [
-                {
-                  id: 'Vintageclothing',
-                  name: 'Shop more second hand',
-                  text: 'If you shop second hand, you can save up to 97% of the energy that goes into making new clothes. It is also fun, and you can find really unique garments at low prices.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/T.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.tidningenhalsa.se/artiklar/kategori/20120420/klimatsmarta-handlar-second-hand/'
-                },
-                {
-                  id: 'Mend',
-                  name: 'Mend your clothes',
-                  text: 'If a garment breaks, patch or mend it. If you can sew, just get started. Otherwise, you can take a course or drop of the garment at the tailor.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/I.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://karlavagen31.se/bli-klimatsmart-sa-vardar-du-dina-klader'
-
-                },
-                {
-                  id: 'Quality',
-                  name: 'Buy ecolabeled',
-                  text: 'More and more companies are offering cloths made by environmentally friendly processes and materials. This has a smaller impact on nature\'s resources and can be a good alternative if you want to buy something new.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/H.jpg" class="learnMoreImage"/><p class="learnMoreText">The yellow dress is made out of blue jeans, and is the first garment in the world to be made from chemically recycled used textiles.</p>',
-                  learnMoreLink: 'https://extra.orebro.se/klimatsmartvardag/klimatsmartatips/ekonomiochkonsumtion/skapaenhallbargarderob.4.6ad5e21514fe44c621c5044.html'
-                }
-              ]
-            },
-            'Food': {
-              name: 'Food',
-              icon: 'kthobjects/K.jpg',
-              actions: [
-                {
-                  id: 'Foodwaste',
-                  name: 'Throw away less food',
-                  text: 'Each Swede throws away 28 kilos of edible food each year. By planning food purchases and only buying what you eat, you not only save on resources but can also save several thousand SEK each year.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/M.jpg" class="learnMoreImage"/><p class="learnMoreText">Restauranglabbet, is an innovation arena who explore how restaurants can reach the UN sustainabilitygoals, by connecting science with the food industry.</p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                },
-                {
-                  id: 'Locallyproduced',
-                  name: 'Eat more organic food',
-                  text: 'Organic products are grown without chemical pesticides which is great for our nature, and also good for yourself. Eat more vegetarian food.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/N.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                },
-                {
-                  id: 'Vegetarian',
-                  name: 'Eat more vegetarian food',
-                  text: 'If you refrain from eating beef once a week for one year, you avoid 150 kilos of greenhouse gas emissions. Vegetables are also really tasty and good for you.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/L.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-                }
-              ]
-            },
-            'Purchases': {
-              name: 'Things',
-              icon: 'kthobjects/F.jpg',
-              actions: [
-                {
-                  id: 'Secondhand',
-                  name: 'Buy or sell second hand',
-                  text: 'By buying and selling things second hand, the objects will get a longer life. One man’s trash is another man’s treasure.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/T.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                },
-                {
-                  id: 'Repair',
-                  name: 'Fix things that are broken',
-                  text: 'Do you have things at home that are broken? Fix it yourself, or hand it in for repair instead of buying new.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/U.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                },
-                {
-                  id: 'Durability',
-                  name: 'Only buy things that last a long time',
-                  text: 'Need to buy something new? Then choose something of a high quality that lasts long and is made of environmentally friendly material.',
-                  localOrgLink: [],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/V.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://malin.elledecoration.se/att-inreda-hallbart'
-                }
-              ]
-            },
-            'Travels': {
-              name: 'Grow your own plants',
-              icon: 'kthobjects/P.jpg',
-              actions: [
-                {
-                  id: 'Bike',
-                  name: 'Compost more',
-                  text: 'You don\'t need a large garden to be able to compost. A compost bucket can be very practical in an apartment and gives you really nice and nutritious soil for your plants.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/Q.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                },
-                {
-                  id: 'Publictransport',
-                  name: 'Buy locally grown seeds',
-                  text: 'Growing your own vegetables and herbs is both useful and fun. Invest in organic seeds from producers in Sweden – and don\'t forget to save your own seeds from your plants to use next year.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/R.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                },
-                {
-                  id: 'Airtravel',
-                  name: 'Water right! ',
-                  text: 'By watering in the morning or evening, you reduce evaporation and thus save water. If you add composting materials such as hay between the plants it helps them to keep the water in the soil.',
-                  localOrgText: 'ExampleLocalOrg',
-                  localOrgLink: ['http://www.example.com/'],
-                  learnMoreText: '<h2></h2><img src="images/kthobjects/S.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                  learnMoreLink: 'https://voxnadalen.naturskyddsforeningen.se/gron-guide/res-klimatsmart'
-                }
-              ]
-            },
-            'Living': {
-            name: 'Education',
-            icon: 'kthobjects/A2.jpg',
-            actions: [
-              {
-                id: 'Energyaudit',
-                name: 'Join a student association',
-                text: 'KTH has several dedicated student associations that are passionate about sustainability and climate. Join an association and contribute to a better environment.',
-                localOrgText: 'ExampleLocalOrg',
-                localOrgLink: ['http://www.example.com/'],
-                learnMoreText: '<h2></h2><img src="images/kthobjects/B.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                learnMoreLink: 'https://www.folksam.se/tester-och-goda-rad/miljo-och-ansvar/bli-klimatsmart/bo-klimatsmart'
-              },
-              {
-                id: 'Water',
-                name: 'Read a new book',
-                text: 'KTH has many researchers who focus on sustainable development and climate. Take the opportunity to borrow and download books and articles from the library and learn more about topics that interest you.',
-                localOrgText: 'ExampleLocalOrg',
-                localOrgLink: ['http://www.example.com/'],
-                learnMoreText: '<h2></h2><img src="images/kthobjects/C.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-              },
-              {
-                id: 'Electronics',
-                name: 'Attend open lectures',
-                text: 'KTH Library gives several different events and lectures each semester on the theme of sustainability and climate. Check out our website kth.se/library for upcoming events.',
-                localOrgText: 'ExampleLocalOrg',
-                localOrgLink: ['http://www.example.com/'],
-                learnMoreText: '<h2></h2><img src="images/kthobjects/D.jpg" class="learnMoreImage"/><p class="learnMoreText"></p>',
-                learnMoreLink: 'http://www.stockholm.se/ByggBo/Leva-Miljovanligt/Klimatsmart-i-hemmet'
-              }
-            ]
-          }
-          }
-        }
-        initlang();
-      }
-      //////////////////////// EVENT EMITTERS ////////////////////////
-
-      function pledgeDone(data) {
-        animateTheVote();
-      }
-
-      function reminderDone(data) {
-        console.log(data);
-      }
-
-
-      function pledge(category, action) {
-        body = {
-          "eventid": event['id'],
-          "category":category.charAt(0).toUpperCase() + category.slice(1),
-          "action": action,
-          "computerLocation":"Right"
-        }
-        console.log(body)
-        $.post({
-            url: api_url + '/vote/api/v1/vote',
-            headers: { 'x-api-key': secret },
-            data: body,
-            dataType: 'json'
-        })
-        .always(pledgeDone)
-        .done(function(data) {
-          //console.log( data );
-        })
-        .fail(function(err) {
-          //alert( err );
-        });
-        // 200 it worked
-        // anything else it didn't
-        // 500 server error out
-        // 400 bad request
-        // 401 forbidden
-        // 404 not found
-      }
-
-      function reminder(subcategory, email) {
-        console.log(subcategory);
-        // All the data you need is the email and the subcategory
-        body = JSON.stringify({
-          email: email,
-          subcategory: subcategory,
-          "lang": getcurrentlang()
-        });
-        $.ajax({
-            type: 'POST',
-            dataType: 'json',
-            url: api_url + '/vote/api/v1/reminder',
-            headers: { 'x-api-key': secret },
-            contentType: 'application/json',
-            data: body
-        })
-        .always(reminderDone);
-      }
-
-      //////////////////////// GLOBAL VARS ////////////////////////
+    //////////////////////// GLOBAL VARS ////////////////////////
 
 
 
-      var THANKS_TIMEOUT;
-      var SYNONYM_INDEX;
-      var SESSION_CATEGORY; // travels, clothing, purchases, food, living
-      var SESSION_ACTION; // 0, 1, 2
+    var THANKS_TIMEOUT;
+    var SYNONYM_INDEX;
+    var SESSION_CATEGORY; // travels, clothing, purchases, food, living
+    var SESSION_ACTION; // 0, 1, 2
 
-      var idleTime = 0;
+    var idleTime = 0;
 
 
 
-      //////////////////////// FUNCTIONS ////////////////////////
+    //////////////////////// FUNCTIONS ////////////////////////
 
-      function initlang() {
-        if(getcurrentlang() != 'en') {
-          $('#lang a').text('English')
-          $('#ClothingLabel').text('Kläder')
-          $('#PurchasesLabel').text('Prylar')
-          $('#FoodLabel').text('Mat')
-          $('#TravelsLabel').text('Odling')
-          $('#LivingLabel').text('Utbildning')
-          $('#caption').html('Ingen kan göra allt, men alla kan göra något. <BR> Välj ett område där du vill göra skillnad för klimatet.')
-          $('#checklistPrompt').text('Jag lovar att:')
-          $('#checklistInstruction').html('Välj ett av alternativen och tryck sedan på "LOVA!" Du väljer sedan om du vill bli påmind om vad du lovat att förändra.<br/>Rösträkningen visar vad våra besökare lovat att förändra.')
-          $('#submitActionButton').text('LOVA!')
-          $('#submitEmail').text('SKICKA!')
-          $('#thanksText').text('TACK!')
-          $('#confirmationContainer').html(`<div id="confirmationTitle" class="title"></div>
-          <div id="confirmationSubtitle" class="title">Du lovar att <span id="confirmationAction"></span></div>
-          <div id="confirmationEmailQuestion" class="subtitle">
-            Enskilda handlingar är viktiga. Det finns mycket man kan göra för att förbättra sin inverkan på klimatet.<br>
-            <span id="emailPrompt">Vill du att vi skickar ett uppföljningsmail med ytterligare information om ditt löfte?</span>
-          </div>
-          <div id="confirmationEmailQuestionButtons">
-            <div id="confirmationEmailQuestionNoButton" class="clickable shadow">
-              NEJ
-            </div>
-            <div id="confirmationEmailQuestionYesButton" class="clickable shadow">
-              JA
-            </div>
-          </div>
-          <div id="confirmationEmailPrivacyStatement" class="body">
-            Vi kommer bara att använda din epostadress till att skicka ett uppföljningsmail med ytterligare information om ditt löfte.<br />
-            Vi kommer inte att använda den till att skicka skräppost.
-          </div>`);
-        } 
-        else {
-          $('#lang a').text('Swedish')
-          $('#ClothingLabel').text('Clothing')
-          $('#PurchasesLabel').text('Things')
-          $('#FoodLabel').text('Food')
-          $('#TravelsLabel').text('Grow your own plants')
-          $('#LivingLabel').text('Education')
-          $('#caption').html('Nobody can do everything but everyone can do something.  <BR> Choose an area where you want to make a difference to the climate.')
-          $('#checklistPrompt').text('I promise to:')
-          $('#checklistInstruction').html('Select an alternative and press “PROMISE!” You can then choose to be reminded about what you’ve promised to change.<br/>The vote count shows what our visitors have promised to change.')
-          $('#submitActionButton').text('PROMISE!')
-          $('#submitEmail').text('SEND!')
-          $('#thanksText').text('THANK YOU!')
-          $('#confirmationContainer').html(`<div id="confirmationTitle" class="title"></div>
-        <div id="confirmationSubtitle" class="title">You promise to <span id="confirmationAction"></span></div>
+    function initlang() {
+      if(getcurrentlang() != 'en') {
+        $('#lang a').text('English')
+        $('#ClothingLabel').text('Kläder')
+        $('#PurchasesLabel').text('Prylar')
+        $('#FoodLabel').text('Mat')
+        $('#TravelsLabel').text('Odling')
+        $('#LivingLabel').text('Utbildning')
+        $('#caption').html('Ingen kan göra allt, men alla kan göra något. <BR> Välj ett område där du vill göra skillnad för klimatet.')
+        $('#checklistPrompt').text('Jag lovar att:')
+        $('#checklistInstruction').html('Välj ett av alternativen och tryck sedan på "LOVA!" Du väljer sedan om du vill bli påmind om vad du lovat att förändra.<br/>Rösträkningen visar vad våra besökare lovat att förändra.')
+        $('#submitActionButton').text('LOVA!')
+        $('#submitEmail').text('SKICKA!')
+        $('#thanksText').text('TACK!')
+        $('#confirmationContainer').html(`<div id="confirmationTitle" class="title"></div>
+        <div id="confirmationSubtitle" class="title">Du lovar att <span id="confirmationAction"></span></div>
         <div id="confirmationEmailQuestion" class="subtitle">
-          Individual actions are important. There are many things you can do to change your impact on climate change.<br>
-          <span id="emailPrompt">Do you want us to send a follow-up email with additional information about your promise?</span>
+          Enskilda handlingar är viktiga. Det finns mycket man kan göra för att förbättra sin inverkan på klimatet.<br>
+          <span id="emailPrompt">Vill du att vi skickar ett uppföljningsmail med ytterligare information om ditt löfte?</span>
         </div>
         <div id="confirmationEmailQuestionButtons">
           <div id="confirmationEmailQuestionNoButton" class="clickable shadow">
-            NO
+            NEJ
           </div>
           <div id="confirmationEmailQuestionYesButton" class="clickable shadow">
-            YES
+            JA
           </div>
         </div>
         <div id="confirmationEmailPrivacyStatement" class="body">
-          We will not save your email and only use it to send a follow-up email with additional information about your promise.<br />
-          We will not use it to send spam mail.
+          Vi kommer bara att använda din epostadress till att skicka ett uppföljningsmail med ytterligare information om ditt löfte.<br />
+          Vi kommer inte att använda den till att skicka skräppost.
         </div>`);
-        }
-        $("#confirmationEmailQuestionNoButton").bind('click', function() {
-          showModal('thanks');
-          idleTime = 0;
-        });
-
-        $("#confirmationEmailQuestionYesButton").bind('click', function() {
-          idleTime = 0;
-          showModal('email');
-        });
+      } 
+      else {
+        $('#lang a').text('Swedish')
+        $('#ClothingLabel').text('Clothing')
+        $('#PurchasesLabel').text('Things')
+        $('#FoodLabel').text('Food')
+        $('#TravelsLabel').text('Grow your own plants')
+        $('#LivingLabel').text('Education')
+        $('#caption').html('Nobody can do everything but everyone can do something.  <BR> Choose an area where you want to make a difference to the climate.')
+        $('#checklistPrompt').text('I promise to:')
+        $('#checklistInstruction').html('Select an alternative and press “PROMISE!” You can then choose to be reminded about what you’ve promised to change.<br/>The vote count shows what our visitors have promised to change.')
+        $('#submitActionButton').text('PROMISE!')
+        $('#submitEmail').text('SEND!')
+        $('#thanksText').text('THANK YOU!')
+        $('#confirmationContainer').html(`<div id="confirmationTitle" class="title"></div>
+      <div id="confirmationSubtitle" class="title">You promise to <span id="confirmationAction"></span></div>
+      <div id="confirmationEmailQuestion" class="subtitle">
+        Individual actions are important. There are many things you can do to change your impact on climate change.<br>
+        <span id="emailPrompt">Do you want us to send a follow-up email with additional information about your promise?</span>
+      </div>
+      <div id="confirmationEmailQuestionButtons">
+        <div id="confirmationEmailQuestionNoButton" class="clickable shadow">
+          NO
+        </div>
+        <div id="confirmationEmailQuestionYesButton" class="clickable shadow">
+          YES
+        </div>
+      </div>
+      <div id="confirmationEmailPrivacyStatement" class="body">
+        We will not save your email and only use it to send a follow-up email with additional information about your promise.<br />
+        We will not use it to send spam mail.
+      </div>`);
       }
+      $("#confirmationEmailQuestionNoButton").bind('click', function() {
+        showModal('thanks');
+        idleTime = 0;
+      });
 
-      function init() {
+      $("#confirmationEmailQuestionYesButton").bind('click', function() {
+        idleTime = 0;
+        showModal('email');
+      });
+    }
+
+    function init() {
 
         initlang();
 
@@ -704,24 +346,24 @@
 
 
 
-      function startSession(category) {
-        // Hide lure screen labels, prompt, and click events
-        $("#caption").addClass( "hide" );
-        $("#lang").addClass( "hide" );
-        $(".categoryLabel").addClass( "hide" );
-        $(".categoryLabel").unbind( "click" );
-        $(".category").unbind( "click" );
-        $("#map").css("opacity", 0.5);
+    function startSession(category) {
+      // Hide lure screen labels, prompt, and click events
+      $("#caption").addClass( "hide" );
+      $("#lang").addClass( "hide" );
+      $(".categoryLabel").addClass( "hide" );
+      $(".categoryLabel").unbind( "click" );
+      $(".category").unbind( "click" );
+      $("#map").css("opacity", 0.5);
 
-        // Store category selection
-        SESSION_CATEGORY = category;
-        // Present checklist modal
-        showModal('checklist');
-      }
+      // Store category selection
+      SESSION_CATEGORY = category;
+      // Present checklist modal
+      showModal('checklist');
+    }
 
 
 
-      function endSession() {
+    function endSession() {
 
         // Close modals
         $('.modal').addClass('hide');
@@ -764,99 +406,99 @@
 
 
 
-      function showModal(modal) {
-        var categoryObject = categories[SESSION_CATEGORY];
+    function showModal(modal) {
+      var categoryObject = categories[SESSION_CATEGORY];
 
-        switch (modal) {
+      switch (modal) {
 
-          case 'checklist':
-            // Populate checklist html
-            $('#checklistPrompt').html(categoryObject.name.toUpperCase());
-            for (var i = 0; i < 3; i++) {
-              $($(".actionItemName")[i]).html(categoryObject.actions[i].name);
-              $($(".actionItemText")[i]).html(categoryObject.actions[i].text);
-            }
-            $("#checklistLogo").attr('src', 'images/'+categories[SESSION_CATEGORY].icon)
+        case 'checklist':
+          // Populate checklist html
+          $('#checklistPrompt').html(categoryObject.name.toUpperCase());
+          for (var i = 0; i < 3; i++) {
+            $($(".actionItemName")[i]).html(categoryObject.actions[i].name);
+            $($(".actionItemText")[i]).html(categoryObject.actions[i].text);
+          }
+          $("#checklistLogo").attr('src', 'images/'+categories[SESSION_CATEGORY].icon)
 
-            // Show checklist modal
-            $('#checklistModal').removeClass('hide');
+          // Show checklist modal
+          $('#checklistModal').removeClass('hide');
 
-            break;
+          break;
 
-          case 'confirmation':
-            // Populate confirmation html
-            var actionName = categoryObject.actions[SESSION_ACTION].name.toLowerCase();
-            if (categoryObject.actions[SESSION_ACTION].altName !== undefined) {
-              actionName = categoryObject.actions[SESSION_ACTION].altName.toLowerCase();
-            }
-            $('#confirmationAction').html(actionName);
-            $('#confirmationTitle').html(confirmationSynonyms[SYNONYM_INDEX]);
-            if(getcurrentlang() != 'en') {
-              $('#emailPrompt').html("Vill du att vi skickar ett  bekräftelsemail med ytterligare information om ditt löfte att göra en insats kopplad till " + categories[SESSION_CATEGORY].name.toLowerCase() + "?");
-            } else {
-              $('#emailPrompt').html("Do you want us to send a follow-up email with additional information about your promise about " + categories[SESSION_CATEGORY].name.toLowerCase() + "?");
-            }
-            SYNONYM_INDEX = (SYNONYM_INDEX + 1) % confirmationSynonyms.length;
+        case 'confirmation':
+          // Populate confirmation html
+          var actionName = categoryObject.actions[SESSION_ACTION].name.toLowerCase();
+          if (categoryObject.actions[SESSION_ACTION].altName !== undefined) {
+            actionName = categoryObject.actions[SESSION_ACTION].altName.toLowerCase();
+          }
+          $('#confirmationAction').html(actionName);
+          $('#confirmationTitle').html(confirmationSynonyms[SYNONYM_INDEX]);
+          if(getcurrentlang() != 'en') {
+            $('#emailPrompt').html("Vill du att vi skickar ett  bekräftelsemail med ytterligare information om ditt löfte att göra en insats kopplad till " + categories[SESSION_CATEGORY].name.toLowerCase() + "?");
+          } else {
+            $('#emailPrompt').html("Do you want us to send a follow-up email with additional information about your promise about " + categories[SESSION_CATEGORY].name.toLowerCase() + "?");
+          }
+          SYNONYM_INDEX = (SYNONYM_INDEX + 1) % confirmationSynonyms.length;
 
-            // Hide checklist and show confirmation
-            $('#checklistModal').addClass('hide');
-            $('#confirmationModal').removeClass('hide');
+          // Hide checklist and show confirmation
+          $('#checklistModal').addClass('hide');
+          $('#confirmationModal').removeClass('hide');
 
-            break;
+          break;
 
-          case 'email':
-            // Hide confirmation and show email
-            $('#confirmationModal').addClass('hide');
-            $('#emailModal').removeClass('hide');
+        case 'email':
+          // Hide confirmation and show email
+          $('#confirmationModal').addClass('hide');
+          $('#emailModal').removeClass('hide');
 
-            break;
+          break;
 
-          case 'thanks':
-            // Hide email or confirmation modal and show thanks modal
-            $('#emailModal').addClass('hide');
-            $('#confirmationModal').addClass('hide');
-            $('#thanksModal').removeClass('hide');
+        case 'thanks':
+          // Hide email or confirmation modal and show thanks modal
+          $('#emailModal').addClass('hide');
+          $('#confirmationModal').addClass('hide');
+          $('#thanksModal').removeClass('hide');
 
-            // Start timeout for thanks screen
-            THANKS_TIMEOUT = window.setTimeout(function() { endSession(); }, 3000)
+          // Start timeout for thanks screen
+          THANKS_TIMEOUT = window.setTimeout(function() { endSession(); }, 3000)
 
-            break;
+          break;
 
-          default:
-            endSession();
-            break;
-        }
+        default:
+          endSession();
+          break;
       }
+    }
 
 
 
-      function animateTheVote() {
-        $("#checklistLogo").addClass('voted');
-        window.setTimeout(function() {
-          showModal('confirmation');
-        }, 3000);
-      }
+    function animateTheVote() {
+      $("#checklistLogo").addClass('voted');
+      window.setTimeout(function() {
+        showModal('confirmation');
+      }, 3000);
+    }
 
 
 
-      //////////////////////// ON READY ////////////////////////
+    //////////////////////// ON READY ////////////////////////
 
 /*
-      function touchHandler(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      }
+    function touchHandler(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
 */
-      function timerIncrement(ms) {
-        idleTime = idleTime + ms;
-        if (idleTime > 80000) { // 80 seconds
-          idleTime = 0;
-          endSession();
-        }
+    function timerIncrement(ms) {
+      idleTime = idleTime + ms;
+      if (idleTime > 80000) { // 80 seconds
+        idleTime = 0;
+        endSession();
       }
+    }
 
-      $(document).ready(function() {
+    $(document).ready(function() {
         init();
         initKeyboard();
 /*
